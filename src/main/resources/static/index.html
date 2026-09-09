@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMART ATTENDANCE MONITORING SYSTEM - Using QR Code & Classroom Geolocation</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- HTML5 QR Code Scanner CDN -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+
+<body>
+
+    <!-- Top Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <i class="fa-solid fa-crosshairs fa-lg" style="color: #38bdf8;"></i>
+            <div>
+                <div style="font-weight: 800; font-size: 1.15rem; letter-spacing: -0.5px;">SMART ATTENDANCE MONITORING
+                    SYSTEM</div>
+                <div
+                    style="font-size: 0.7rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                    Using QR Code & Classroom Geolocation</div>
+            </div>
+        </div>
+        <div class="nav-user-info" id="nav-user-panel" style="display: none;">
+            <div class="user-badge">
+                <i class="fa-solid fa-user-circle"></i>
+                <span id="user-display-name">User</span>
+                <span id="user-role-tag" class="role-tag student">STUDENT</span>
+            </div>
+            <button class="btn btn-secondary" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <main class="container">
+
+        <!-- ==================== 1. AUTH & SYSTEM HERO LANDING VIEW ==================== -->
+        <section id="view-auth">
+            <!-- Hero Landing Explanation Card -->
+            <div class="card hero-card"
+                style="margin-bottom: 2rem; background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95)); border: 1px solid rgba(99, 102, 241, 0.3);">
+                <div style="max-width: 900px; margin: 0 auto; text-align: center; padding: 1rem 0;">
+                    <div class="hero-badge"
+                        style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.4); padding: 0.35rem 1rem; border-radius: 20px; color: var(--accent-primary); font-size: 0.82rem; font-weight: 700; margin-bottom: 1rem;">
+                        <i class="fa-solid fa-shield-halved"></i> Anti-Proxy Spatial Attendance Protocol
+                    </div>
+                    <h1
+                        style="font-size: 2.2rem; font-weight: 800; line-height: 1.25; margin-bottom: 0.8rem; background: linear-gradient(135deg, #ffffff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                        Smart QR Code & Classroom Geolocation Attendance
+                    </h1>
+                    <p
+                        style="color: var(--text-secondary); font-size: 0.98rem; line-height: 1.6; max-width: 780px; margin: 0 auto 1.8rem auto;">
+                        Prevents proxy attendance by enforcing physical classroom presence. Attendance is granted only
+                        when a student scans a teacher's dynamic expiring QR code <strong>AND</strong> their browser GPS
+                        position is verified inside the allowed classroom geofence.
+                    </p>
+
+                    <!-- 5-Step How Attendance Works Visual Flow -->
+                    <div
+                        style="font-size: 0.85rem; font-weight: 700; color: var(--accent-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem;">
+                        <i class="fa-solid fa-diagram-project"></i> How The System Prevents Proxy Attendance (5 Steps)
+                    </div>
+                    <div class="grid-5-steps"
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.8rem; text-align: left;">
+                        <div class="step-card">
+                            <div class="step-num">1</div>
+                            <div class="step-title"><i class="fa-solid fa-play"
+                                    style="color: var(--accent-success);"></i> Start Session</div>
+                            <div class="step-desc">Teacher selects class & sets allowed GPS radius.</div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-num">2</div>
+                            <div class="step-title"><i class="fa-solid fa-qrcode"
+                                    style="color: var(--accent-primary);"></i> Dynamic QR</div>
+                            <div class="step-desc">Server generates time-expiring UUID QR token.</div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-num">3</div>
+                            <div class="step-title"><i class="fa-solid fa-camera"
+                                    style="color: var(--accent-warning);"></i> Scan Token</div>
+                            <div class="step-desc">Student scans active QR code using smartphone.</div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-num">4</div>
+                            <div class="step-title"><i class="fa-solid fa-location-crosshairs"
+                                    style="color: var(--accent-secondary);"></i> GPS Radius</div>
+                            <div class="step-desc">Haversine formula verifies distance in meters.</div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-num">5</div>
+                            <div class="step-title"><i class="fa-solid fa-square-check"
+                                    style="color: var(--accent-success);"></i> Record Log</div>
+                            <div class="step-desc">Attendance marked PRESENT or REJECTED.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Login Form Card -->
+            <div class="card" style="max-width: 480px; margin: 0 auto;">
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div
+                        style="width: 60px; height: 60px; background: rgba(99, 102, 241, 0.15); border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; color: var(--accent-primary); font-size: 1.8rem; margin-bottom: 0.8rem;">
+                        <i class="fa-solid fa-lock"></i>
+                    </div>
+                    <h2 id="auth-title">Sign In to Command Portal</h2>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.4rem;">Select quick demo
+                        account or enter credentials</p>
+                </div>
+
+                <!-- Demo Account Quick Login Helpers -->
+                <div
+                    style="background: rgba(255, 255, 255, 0.03); border: 1px dashed var(--border-color); border-radius: var(--radius-sm); padding: 0.8rem; margin-bottom: 1.5rem;">
+                    <div
+                        style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">
+                        <i class="fa-solid fa-bolt" style="color: var(--accent-warning);"></i> Quick Demo Accounts
+                        (Click to Fill)
+                    </div>
+                    <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-secondary"
+                            style="font-size: 0.75rem; padding: 0.35rem 0.7rem;"
+                            onclick="fillDemoAccount('admin', 'admin123')">
+                            <i class="fa-solid fa-user-shield"></i> Admin
+                        </button>
+                        <button type="button" class="btn btn-secondary"
+                            style="font-size: 0.75rem; padding: 0.35rem 0.7rem;"
+                            onclick="fillDemoAccount('teacher1', 'teacher123')">
+                            <i class="fa-solid fa-chalkboard-user"></i> Teacher
+                        </button>
+                        <button type="button" class="btn btn-secondary"
+                            style="font-size: 0.75rem; padding: 0.35rem 0.7rem;"
+                            onclick="fillDemoAccount('student1', 'student123')">
+                            <i class="fa-solid fa-graduation-cap"></i> Student
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Login Form -->
+                <form id="form-login" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="login-username">Username</label>
+                        <input type="text" id="login-username" class="form-control" placeholder="Enter username"
+                            required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" class="form-control" placeholder="Enter password"
+                            required>
+                    </div>
+                    <button type="submit" class="btn btn-primary"
+                        style="width: 100%; padding: 0.8rem; margin-top: 0.5rem;">
+                        <i class="fa-solid fa-right-to-bracket"></i> Login to System
+                    </button>
+                </form>
+
+                <!-- Register Form (Hidden by default) -->
+                <form id="form-register" style="display: none;" onsubmit="handleRegister(event)">
+                    <div class="form-group">
+                        <label for="reg-role">Account Role</label>
+                        <select id="reg-role" class="form-control" onchange="toggleRegisterFields()">
+                            <option value="STUDENT">Student</option>
+                            <option value="TEACHER">Teacher / Faculty</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-fullname">Full Name</label>
+                        <input type="text" id="reg-fullname" class="form-control" placeholder="e.g. John Doe" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-email">College Email</label>
+                        <input type="email" id="reg-email" class="form-control" placeholder="john@college.edu" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-username">Username</label>
+                        <input type="text" id="reg-username" class="form-control" placeholder="e.g. john_doe" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-password">Password</label>
+                        <input type="password" id="reg-password" class="form-control"
+                            placeholder="At least 6 characters" required>
+                    </div>
+
+                    <div id="reg-student-fields">
+                        <div class="form-group">
+                            <label for="reg-roll">Roll Number</label>
+                            <input type="text" id="reg-roll" class="form-control" placeholder="e.g. CS2024005">
+                        </div>
+                        <div class="form-group">
+                            <label for="reg-dept">Department</label>
+                            <input type="text" id="reg-dept" class="form-control" placeholder="Computer Science"
+                                value="Computer Science">
+                        </div>
+                    </div>
+
+                    <div id="reg-teacher-fields" style="display: none;">
+                        <div class="form-group">
+                            <label for="reg-empid">Faculty Employee ID</label>
+                            <input type="text" id="reg-empid" class="form-control" placeholder="e.g. EMP205">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary"
+                        style="width: 100%; padding: 0.8rem; margin-top: 0.5rem;">
+                        <i class="fa-solid fa-user-plus"></i> Register Account
+                    </button>
+                </form>
+
+                <div style="text-align: center; margin-top: 1.2rem; font-size: 0.85rem; color: var(--text-secondary);">
+                    <span id="toggle-auth-text">Don't have an account?</span>
+                    <a href="#"
+                        style="color: var(--accent-primary); font-weight: 600; text-decoration: none; margin-left: 0.3rem;"
+                        onclick="toggleAuthForm(event)">
+                        <span id="toggle-auth-action">Register Now</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ==================== 2. ADMIN DASHBOARD VIEW ==================== -->
+        <section id="view-admin" style="display: none;">
+            <div
+                style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                    <h2><i class="fa-solid fa-user-shield" style="color: var(--accent-primary);"></i> Admin Command
+                        Center</h2>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem;">System oversight, classroom GPS geofence
+                        configuration, faculty & student user CRUD management.</p>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid-4" style="margin-bottom: 2rem;">
+                <div class="stat-box">
+                    <div class="stat-icon"><i class="fa-solid fa-user-graduate"></i></div>
+                    <div>
+                        <div class="stat-value" id="admin-stat-students">0</div>
+                        <div class="stat-label">Total Students</div>
+                    </div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-icon" style="color: var(--accent-secondary); background: rgba(6, 182, 212, 0.15);">
+                        <i class="fa-solid fa-chalkboard-user"></i>
+                    </div>
+                    <div>
+                        <div class="stat-value" id="admin-stat-teachers">0</div>
+                        <div class="stat-label">Faculty / Teachers</div>
+                    </div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-icon" style="color: var(--accent-success); background: rgba(16, 185, 129, 0.15);">
+                        <i class="fa-solid fa-building-columns"></i>
+                    </div>
+                    <div>
+                        <div class="stat-value" id="admin-stat-classrooms">0</div>
+                        <div class="stat-label">Permitted Classrooms</div>
+                    </div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-icon" style="color: var(--accent-warning); background: rgba(245, 158, 11, 0.15);">
+                        <i class="fa-solid fa-check-double"></i>
+                    </div>
+                    <div>
+                        <div class="stat-value" id="admin-stat-attendance-pct">0%</div>
+                        <div class="stat-label">Overall System Attendance</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchAdminTab('classrooms', this)"><i
+                        class="fa-solid fa-location-dot"></i> Classrooms & GPS Geofences</button>
+                <button class="tab-btn" onclick="switchAdminTab('subjects', this)"><i class="fa-solid fa-book"></i>
+                    Subjects & Courses</button>
+                <button class="tab-btn" onclick="switchAdminTab('users', this)"><i class="fa-solid fa-users"></i> System
+                    Users</button>
+                <button class="tab-btn" onclick="switchAdminTab('notices', this)"><i class="fa-solid fa-bullhorn"></i>
+                    Notices</button>
+            </div>
+
+            <!-- Admin Tab 1: Classrooms -->
+            <div id="admin-tab-classrooms" class="tab-content active card">
+                <div class="card-title">
+                    <span>Configured Classroom GPS Geofences</span>
+                    <button class="btn btn-primary" onclick="openAddClassroomModal()">
+                        <i class="fa-solid fa-plus"></i> Add Permitted Classroom
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Room Name</th>
+                                <th>Building / Block</th>
+                                <th>Latitude</th>
+                                <th>Longitude</th>
+                                <th>Allowed Radius</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-admin-classrooms">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Admin Tab 2: Subjects -->
+            <div id="admin-tab-subjects" class="tab-content card">
+                <div class="card-title">
+                    <span>Course & Subject Registry</span>
+                    <button class="btn btn-primary" onclick="openAddSubjectModal()">
+                        <i class="fa-solid fa-plus"></i> Add Subject
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Subject Name</th>
+                                <th>Department</th>
+                                <th>Assigned Teacher</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-admin-subjects">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Admin Tab 3: Users -->
+            <div id="admin-tab-users" class="tab-content card">
+                <div class="card-title">
+                    <span>Registered System Accounts</span>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Full Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Date Registered</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-admin-users">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Admin Tab 4: Notices -->
+            <div id="admin-tab-notices" class="tab-content card">
+                <div class="card-title">
+                    <span>Department Announcements</span>
+                    <button class="btn btn-primary" onclick="openAddNoticeModal()">
+                        <i class="fa-solid fa-plus"></i> Post Announcement
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Content</th>
+                                <th>Posted By</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-admin-notices">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ==================== 3. TEACHER DASHBOARD VIEW ==================== -->
+        <section id="view-teacher" style="display: none;">
+            <div style="margin-bottom: 1.5rem;">
+                <h2><i class="fa-solid fa-chalkboard-user" style="color: var(--accent-secondary);"></i> Faculty Session
+                    Control Center</h2>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">Start dynamic QR attendance sessions,
+                    monitor live scans, and view real-time countdown timer.</p>
+            </div>
+
+            <div class="grid-2">
+                <!-- Start Session Control Box -->
+                <div class="card">
+                    <div class="card-title">
+                        <span><i class="fa-solid fa-play" style="color: var(--accent-success);"></i> Start New
+                            Attendance Session</span>
+                    </div>
+                    <form id="form-start-session" onsubmit="handleStartSession(event)">
+                        <div class="form-group">
+                            <label for="teacher-select-subject">Select Subject / Course</label>
+                            <select id="teacher-select-subject" class="form-control" required>
+                                <!-- Dynamic subjects -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="teacher-select-classroom">Select Classroom Location</label>
+                            <select id="teacher-select-classroom" class="form-control"
+                                onchange="updateClassroomCoordsPreview()" required>
+                                <!-- Dynamic classrooms -->
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="session-duration">Session Expiration Duration (Minutes)</label>
+                            <input type="number" id="session-duration" class="form-control" value="10" min="1" max="60"
+                                required>
+                        </div>
+
+                        <div
+                            style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1.2rem;">
+                            <div
+                                style="font-size: 0.8rem; color: var(--accent-secondary); font-weight: 700; margin-bottom: 0.5rem;">
+                                <i class="fa-solid fa-crosshairs"></i> Target Permitted Geofence
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem;">
+                                <div>
+                                    <span style="font-size: 0.75rem; color: var(--text-secondary);">Latitude</span>
+                                    <input type="number" step="any" id="session-lat" class="form-control"
+                                        style="padding: 0.4rem; font-size: 0.85rem;" required>
+                                </div>
+                                <div>
+                                    <span style="font-size: 0.75rem; color: var(--text-secondary);">Longitude</span>
+                                    <input type="number" step="any" id="session-lon" class="form-control"
+                                        style="padding: 0.4rem; font-size: 0.85rem;" required>
+                                </div>
+                            </div>
+                            <div style="margin-top: 0.6rem;">
+                                <span style="font-size: 0.75rem; color: var(--text-secondary);">Allowed Radius
+                                    (Meters)</span>
+                                <input type="number" id="session-radius" class="form-control" value="50"
+                                    style="padding: 0.4rem; font-size: 0.85rem;" required>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.85rem;">
+                            <i class="fa-solid fa-qrcode"></i> Generate QR Code & Start Session
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Active Session Monitor Preview -->
+                <div class="card" id="teacher-active-session-card">
+                    <div class="card-title">
+                        <span>Active Session Control</span>
+                        <span id="session-status-badge" class="badge badge-warning">INACTIVE</span>
+                    </div>
+
+                    <div id="no-active-session-msg"
+                        style="text-align: center; padding: 3rem 1rem; color: var(--text-secondary);">
+                        <i class="fa-solid fa-qrcode fa-3x" style="opacity: 0.3; margin-bottom: 1rem;"></i>
+                        <p>No active attendance session running right now.</p>
+                        <p style="font-size: 0.85rem; margin-top: 0.4rem;">Select subject and classroom on the left to
+                            start a session.</p>
+                    </div>
+
+                    <div id="active-session-body" style="display: none; text-align: center;">
+                        <!-- Countdown Timer Bar -->
+                        <div
+                            style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); padding: 0.6rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between;">
+                            <span style="font-size: 0.85rem; font-weight: 700; color: #a5b4fc;"><i
+                                    class="fa-solid fa-stopwatch"></i> Session Countdown</span>
+                            <span id="session-countdown-timer"
+                                style="font-family: monospace; font-size: 1.2rem; font-weight: 800; color: var(--accent-warning);">10:00</span>
+                        </div>
+
+                        <div class="qr-container" style="margin-bottom: 1rem;">
+                            <img id="active-qr-img" src="" alt="Active Session QR Code">
+                        </div>
+                        <div style="font-family: monospace; font-size: 1.05rem; font-weight: 700; color: var(--accent-secondary); margin-bottom: 0.5rem;"
+                            id="active-session-token-display">
+                            ATT-TOKEN
+                        </div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                            Subject: <strong id="active-subject-name" style="color: white;">-</strong> |
+                            Room: <strong id="active-room-name" style="color: white;">-</strong>
+                        </div>
+
+                        <div
+                            style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-sm); padding: 0.6rem; margin-bottom: 1.2rem; display: flex; justify-content: space-around; align-items: center;">
+                            <div>
+                                <div style="font-size: 1.4rem; font-weight: 800; color: var(--accent-success);"
+                                    id="teacher-live-count">0</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary);">Students Marked Present
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-danger" style="width: 100%;" onclick="handleEndSession()">
+                            <i class="fa-solid fa-stop"></i> End Attendance Session
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Real-Time Attendance Stream -->
+            <div class="card">
+                <div class="card-title">
+                    <span>Live Real-Time Student Scans</span>
+                    <span style="font-size: 0.8rem; color: var(--accent-success);" id="live-polling-indicator">
+                        <i class="fa-solid fa-sync fa-spin"></i> Polling Updates
+                    </span>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Student Name</th>
+                                <th>Roll Number</th>
+                                <th>Department</th>
+                                <th>Scan Time</th>
+                                <th>GPS Distance</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-teacher-live-attendance">
+                            <tr>
+                                <td colspan="6" style="text-align: center; color: var(--text-secondary);">No student
+                                    scans recorded yet.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ==================== 4. STUDENT DASHBOARD VIEW ==================== -->
+        <section id="view-student" style="display: none;">
+            <div style="margin-bottom: 1.5rem;">
+                <h2><i class="fa-solid fa-graduation-cap" style="color: var(--accent-success);"></i> Student Attendance
+                    Portal</h2>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">Scan classroom QR code and verify your
+                    current GPS location to mark attendance.</p>
+            </div>
+
+            <!-- Stats Overview & Geofence Radar Widget -->
+            <div class="grid-2" style="margin-bottom: 1.5rem;">
+
+                <!-- QR Attendance Scanner Card -->
+                <div class="card" style="border: 2px solid var(--accent-primary);">
+                    <div class="card-title">
+                        <span><i class="fa-solid fa-qrcode" style="color: var(--accent-primary);"></i> Scan Attendance
+                            QR</span>
+                        <span class="badge badge-success">GPS Verification Engine</span>
+                    </div>
+
+                    <!-- Geolocation Testing Mode Switcher (Great for Viva Demo) -->
+                    <div
+                        style="background: rgba(6, 182, 212, 0.08); border: 1px solid rgba(6, 182, 212, 0.25); border-radius: var(--radius-sm); padding: 0.85rem; margin-bottom: 1.2rem;">
+                        <div
+                            style="font-size: 0.8rem; font-weight: 700; color: #67e8f9; margin-bottom: 0.4rem; display: flex; align-items: center; justify-content: space-between;">
+                            <span><i class="fa-solid fa-location-crosshairs"></i> Geolocation Source</span>
+                            <span id="geo-status-indicator" style="font-size: 0.75rem; color: var(--accent-success);"><i
+                                    class="fa-solid fa-circle"></i> Ready</span>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 0.4rem;">
+                            <select id="student-geo-mode" class="form-control"
+                                style="font-size: 0.85rem; padding: 0.4rem;" onchange="handleGeoModeChange()">
+                                <option value="BROWSER">Live Browser GPS (navigator.geolocation)</option>
+                                <option value="PRESET_INSIDE">Viva Preset: Inside Lab 3 (19.0760, 72.8777) [VALID]
+                                </option>
+                                <option value="PRESET_OUTSIDE">Viva Preset: Outside Campus / Food Court (19.0850,
+                                    72.8850) [REJECTED]</option>
+                            </select>
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);" id="geo-coords-display">
+                            Current Coords: Detecting...
+                        </div>
+                    </div>
+
+                    <!-- Camera Scan or Manual Token Submission -->
+                    <div id="qr-reader"
+                        style="width: 100%; min-height: 180px; border-radius: 8px; overflow: hidden; background: black; margin-bottom: 1rem; display: none;">
+                    </div>
+
+                    <form id="form-scan-qr" onsubmit="handleStudentSubmitAttendance(event)">
+                        <div class="form-group">
+                            <label for="student-qr-token">QR Session Token (Scanned or Entered)</label>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <input type="text" id="student-qr-token" class="form-control"
+                                    placeholder="e.g. ATT-A1B2C3D4-..." required>
+                                <button type="button" class="btn btn-secondary" onclick="toggleCameraScanner()"
+                                    id="btn-toggle-camera">
+                                    <i class="fa-solid fa-camera"></i> Camera
+                                </button>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success" style="width: 100%; padding: 0.85rem;"
+                            id="btn-submit-attendance">
+                            <i class="fa-solid fa-check-circle"></i> Verify Location & Mark Attendance
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Visual Geofence Radar Widget & Stat Summary -->
+                <div class="card">
+                    <div class="card-title">
+                        <span><i class="fa-solid fa-radar" style="color: var(--accent-secondary);"></i> Visual Geofence
+                            Status Radar</span>
+                        <span id="student-warning-badge" class="badge badge-success">Good Standing</span>
+                    </div>
+
+                    <!-- Visual Geofence Indicator Box -->
+                    <div
+                        style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1.2rem; text-align: center;">
+                        <div
+                            style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; margin-bottom: 0.4rem;">
+                            Real-Time Classroom Distance Radar</div>
+                        <div id="radar-status-pill" class="status-pill inside"
+                            style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.4rem 1.2rem; border-radius: 20px; font-weight: 800; font-size: 0.95rem; margin-bottom: 0.8rem;">
+                            <i class="fa-solid fa-circle-check"></i> INSIDE PERMITTED GEOFENCE
+                        </div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                            Calculated Distance: <strong id="radar-distance-val" style="color: white;">0.0m</strong> |
+                            Max Radius: <strong style="color: white;">50m</strong>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-around; margin: 1rem 0;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 2.8rem; font-weight: 800; color: var(--accent-primary);"
+                                id="student-stat-pct">--%</div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">Overall Attendance</div>
+                        </div>
+                        <div style="height: 60px; width: 1px; background: var(--border-color);"></div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.8rem; font-weight: 700;" id="student-stat-classes">0 / 0</div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">Classes Attended</div>
+                        </div>
+                    </div>
+
+                    <div
+                        style="background: rgba(255, 255, 255, 0.02); padding: 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.85rem; color: var(--text-secondary);">
+                        <i class="fa-solid fa-circle-info" style="color: var(--accent-secondary);"></i> Minimum 75%
+                        attendance required for university exam eligibility.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subject-Wise Attendance Progress Cards -->
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="card-title">Subject-Wise Attendance Breakdown</div>
+                <div id="subject-wise-container" class="grid-2">
+                    <!-- Dynamic subject cards -->
+                </div>
+            </div>
+
+            <!-- Student Tabs: History Log, Timetable, Notices, Todo -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchStudentTab('history', this)"><i
+                        class="fa-solid fa-list-check"></i> Verification Log</button>
+                <button class="tab-btn" onclick="switchStudentTab('timetable', this)"><i
+                        class="fa-solid fa-calendar-days"></i> Timetable</button>
+                <button class="tab-btn" onclick="switchStudentTab('notices', this)"><i class="fa-solid fa-bullhorn"></i>
+                    Notices</button>
+                <button class="tab-btn" onclick="switchStudentTab('todos', this)"><i
+                        class="fa-solid fa-clipboard-list"></i> Reminders</button>
+            </div>
+
+            <!-- Student History Audit Log Tab -->
+            <div id="student-tab-history" class="tab-content active card">
+                <div class="card-title">Attendance Verification Audit Log</div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Subject</th>
+                                <th>Classroom</th>
+                                <th>Date & Time</th>
+                                <th>GPS Distance</th>
+                                <th>Verification Outcome</th>
+                                <th>Server Audit Message</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-student-history">
+                            <!-- Dynamic history -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Student Timetable Tab -->
+            <div id="student-tab-timetable" class="tab-content card">
+                <div class="card-title">Weekly Schedule</div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Day</th>
+                                <th>Subject</th>
+                                <th>Classroom</th>
+                                <th>Time Slot</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-student-timetable">
+                            <!-- Dynamic timetable -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Student Notices Tab -->
+            <div id="student-tab-notices" class="tab-content card">
+                <div class="card-title">Department Announcements</div>
+                <div id="student-notices-container" style="display: flex; flex-direction: column; gap: 1rem;">
+                    <!-- Dynamic notices -->
+                </div>
+            </div>
+
+            <!-- Student To-Do List Tab -->
+            <div id="student-tab-todos" class="tab-content card">
+                <div class="card-title">Study Reminders & Tasks</div>
+                <form onsubmit="handleAddTodo(event)" style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                    <input type="text" id="input-todo-title" class="form-control" placeholder="Add study reminder..."
+                        required>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add</button>
+                </form>
+                <div id="student-todos-container" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <!-- Dynamic todos -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ==================== MODALS ==================== -->
+
+    <!-- Add Classroom Modal -->
+    <div class="modal-overlay" id="modal-add-classroom">
+        <div class="modal-card">
+            <div class="card-title">
+                <span>Add Permitted Classroom Geofence</span>
+                <button class="btn btn-secondary" style="padding: 0.3rem 0.6rem;"
+                    onclick="closeModal('modal-add-classroom')">&times;</button>
+            </div>
+            <form onsubmit="handleSaveClassroom(event)">
+                <div class="form-group">
+                    <label>Room Name</label>
+                    <input type="text" id="modal-room-name" class="form-control" placeholder="e.g. Lab 4 (IT Dept)"
+                        required>
+                </div>
+                <div class="form-group">
+                    <label>Building / Block</label>
+                    <input type="text" id="modal-room-building" class="form-control"
+                        placeholder="e.g. Technology Block B" required>
+                </div>
+                <div class="form-group">
+                    <label>Latitude Coordinates</label>
+                    <input type="number" step="any" id="modal-room-lat" class="form-control" placeholder="e.g. 19.0760"
+                        required>
+                </div>
+                <div class="form-group">
+                    <label>Longitude Coordinates</label>
+                    <input type="number" step="any" id="modal-room-lon" class="form-control" placeholder="e.g. 72.8777"
+                        required>
+                </div>
+                <div class="form-group">
+                    <label>Permitted Geofence Radius (Meters)</label>
+                    <input type="number" id="modal-room-radius" class="form-control" value="50" required>
+                </div>
+                <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem;">
+                    <button type="button" class="btn btn-secondary"
+                        onclick="closeModal('modal-add-classroom')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Classroom</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Subject Modal -->
+    <div class="modal-overlay" id="modal-add-subject">
+        <div class="modal-card">
+            <div class="card-title">
+                <span>Add New Course / Subject</span>
+                <button class="btn btn-secondary" style="padding: 0.3rem 0.6rem;"
+                    onclick="closeModal('modal-add-subject')">&times;</button>
+            </div>
+            <form onsubmit="handleSaveSubject(event)">
+                <div class="form-group">
+                    <label>Subject Code</label>
+                    <input type="text" id="modal-subject-code" class="form-control" placeholder="e.g. CS603" required>
+                </div>
+                <div class="form-group">
+                    <label>Subject Name</label>
+                    <input type="text" id="modal-subject-name" class="form-control" placeholder="e.g. Cloud Computing"
+                        required>
+                </div>
+                <div class="form-group">
+                    <label>Department</label>
+                    <input type="text" id="modal-subject-dept" class="form-control" placeholder="Computer Science"
+                        value="Computer Science" required>
+                </div>
+                <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem;">
+                    <button type="button" class="btn btn-secondary"
+                        onclick="closeModal('modal-add-subject')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Subject</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Notice Modal -->
+    <div class="modal-overlay" id="modal-add-notice">
+        <div class="modal-card">
+            <div class="card-title">
+                <span>Post Department Notice</span>
+                <button class="btn btn-secondary" style="padding: 0.3rem 0.6rem;"
+                    onclick="closeModal('modal-add-notice')">&times;</button>
+            </div>
+            <form onsubmit="handleSaveNotice(event)">
+                <div class="form-group">
+                    <label>Announcement Title</label>
+                    <input type="text" id="modal-notice-title" class="form-control"
+                        placeholder="e.g. Mid-Semester Exam Schedule" required>
+                </div>
+                <div class="form-group">
+                    <label>Content</label>
+                    <textarea id="modal-notice-content" class="form-control" rows="4"
+                        placeholder="Enter announcement details..." required></textarea>
+                </div>
+                <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem;">
+                    <button type="button" class="btn btn-secondary"
+                        onclick="closeModal('modal-add-notice')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Post Announcement</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container"></div>
+
+    <!-- Application JavaScript Logic -->
+    <script src="js/app.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/location-helper.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/teacher.js"></script>
+    <script src="js/student.js"></script>
+</body>
+
+</html>
