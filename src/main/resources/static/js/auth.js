@@ -23,7 +23,7 @@ function toggleAuthForm(e) {
     } else {
         loginForm.style.display = 'none';
         regForm.style.display = 'block';
-        title.textContent = 'Create New Student / Faculty Account';
+        title.textContent = 'Create New System Account';
         toggleText.textContent = 'Already have an account?';
         toggleAction.textContent = 'Login';
     }
@@ -37,9 +37,12 @@ function toggleRegisterFields() {
     if (role === 'STUDENT') {
         studentFields.style.display = 'block';
         teacherFields.style.display = 'none';
-    } else {
+    } else if (role === 'TEACHER') {
         studentFields.style.display = 'none';
         teacherFields.style.display = 'block';
+    } else if (role === 'ADMIN') {
+        studentFields.style.display = 'none';
+        teacherFields.style.display = 'none';
     }
 }
 

@@ -13,6 +13,7 @@ import java.util.*;
 @RestController
 @RequestMapping("/api/teacher")
 @CrossOrigin(origins = "*")
+@SuppressWarnings("null")
 public class TeacherController {
 
     @Autowired
@@ -33,8 +34,18 @@ public class TeacherController {
     @Autowired
     private TimetableRepository timetableRepository;
 
+    @Autowired
+    private TeacherRepository teacherRepository;
+
     @GetMapping("/subjects/{teacherId}")
     public ResponseEntity<List<Subject>> getTeacherSubjects(@PathVariable Long teacherId) {
+        Teacher teacher = teacherRepository.findById(teacherId).orElse(null);
+        if (teacher == null) {
+            teacher = teacherRepository.findByUserId(teacherId).orElse(null);
+        }
+        if (teacher != null) {
+            return ResponseEntity.ok(subjectRepository.findByTeacher(teacher));
+        }
         return ResponseEntity.ok(subjectRepository.findByTeacherId(teacherId));
     }
 

@@ -14,6 +14,7 @@ import java.util.*;
 @RestController
 @RequestMapping("/api/student")
 @CrossOrigin(origins = "*")
+@SuppressWarnings("null")
 public class StudentController {
 
     @Autowired
@@ -33,9 +34,6 @@ public class StudentController {
 
     @Autowired
     private UserRepository userRepository;
-
-    @Autowired
-    private SubjectRepository subjectRepository;
 
     @PostMapping("/attendance/mark")
     public ResponseEntity<AttendanceResultResponse> markAttendance(@RequestBody MarkAttendanceRequest request) {

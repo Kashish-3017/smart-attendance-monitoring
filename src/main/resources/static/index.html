@@ -171,6 +171,7 @@
                         <select id="reg-role" class="form-control" onchange="toggleRegisterFields()">
                             <option value="STUDENT">Student</option>
                             <option value="TEACHER">Teacher / Faculty</option>
+                            <option value="ADMIN">System Administrator (Admin)</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -284,6 +285,8 @@
                         class="fa-solid fa-location-dot"></i> Classrooms & GPS Geofences</button>
                 <button class="tab-btn" onclick="switchAdminTab('subjects', this)"><i class="fa-solid fa-book"></i>
                     Subjects & Courses</button>
+                <button class="tab-btn" onclick="switchAdminTab('faculty', this)"><i class="fa-solid fa-chalkboard-user"></i>
+                    Faculty Management</button>
                 <button class="tab-btn" onclick="switchAdminTab('users', this)"><i class="fa-solid fa-users"></i> System
                     Users</button>
                 <button class="tab-btn" onclick="switchAdminTab('notices', this)"><i class="fa-solid fa-bullhorn"></i>
@@ -337,6 +340,30 @@
                             </tr>
                         </thead>
                         <tbody id="table-admin-subjects">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Admin Tab 3: Faculty Management -->
+            <div id="admin-tab-faculty" class="tab-content card">
+                <div class="card-title">
+                    <span>Faculty & Teacher Subject Assignments</span>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Emp ID</th>
+                                <th>Faculty Name</th>
+                                <th>Email</th>
+                                <th>Department</th>
+                                <th>Assigned Subjects</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-admin-faculty">
                             <!-- Populated dynamically -->
                         </tbody>
                     </table>
@@ -412,7 +439,12 @@
                     </div>
                     <form id="form-start-session" onsubmit="handleStartSession(event)">
                         <div class="form-group">
-                            <label for="teacher-select-subject">Select Subject / Course</label>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                                <label for="teacher-select-subject" style="margin-bottom: 0;">Select Subject / Course</label>
+                                <button type="button" class="btn btn-secondary" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;" onclick="loadTeacherData()">
+                                    <i class="fa-solid fa-arrows-rotate"></i> Refresh Subjects
+                                </button>
+                            </div>
                             <select id="teacher-select-subject" class="form-control" required>
                                 <!-- Dynamic subjects -->
                             </select>
@@ -595,19 +627,28 @@
                     </div>
 
                     <!-- Camera Scan or Manual Token Submission -->
+                    <div id="camera-badge-container" style="display: none; margin-bottom: 0.6rem; text-align: center;">
+                        <span id="camera-active-status" class="badge badge-success" style="font-size: 0.82rem; padding: 0.35rem 0.8rem;">
+                            <i class="fa-solid fa-camera"></i> Rear Camera Active
+                        </span>
+                    </div>
                     <div id="qr-reader"
-                        style="width: 100%; min-height: 180px; border-radius: 8px; overflow: hidden; background: black; margin-bottom: 1rem; display: none;">
+                        style="width: 100%; min-height: 200px; border-radius: 8px; overflow: hidden; background: black; margin-bottom: 1rem; display: none;">
                     </div>
 
                     <form id="form-scan-qr" onsubmit="handleStudentSubmitAttendance(event)">
                         <div class="form-group">
                             <label for="student-qr-token">QR Session Token (Scanned or Entered)</label>
-                            <div style="display: flex; gap: 0.5rem;">
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                                 <input type="text" id="student-qr-token" class="form-control"
-                                    placeholder="e.g. ATT-A1B2C3D4-..." required>
+                                    placeholder="e.g. ATT-A1B2C3D4-..." style="flex: 1; min-width: 180px;" required>
                                 <button type="button" class="btn btn-secondary" onclick="toggleCameraScanner()"
                                     id="btn-toggle-camera">
                                     <i class="fa-solid fa-camera"></i> Camera
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="switchCameraScanner()"
+                                    id="btn-switch-camera" style="display: none;">
+                                    <i class="fa-solid fa-camera-rotate"></i> Switch Camera
                                 </button>
                             </div>
                         </div>
@@ -817,10 +858,81 @@
                     <input type="text" id="modal-subject-dept" class="form-control" placeholder="Computer Science"
                         value="Computer Science" required>
                 </div>
+                <div class="form-group">
+                    <label>Assigned Teacher / Faculty</label>
+                    <select id="modal-subject-teacher" class="form-control">
+                        <option value="">-- Unassigned --</option>
+                    </select>
+                </div>
                 <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem;">
                     <button type="button" class="btn btn-secondary"
                         onclick="closeModal('modal-add-subject')">Cancel</button>
                     <button type="submit" class="btn btn-primary">Save Subject</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Subject Modal -->
+    <div class="modal-overlay" id="modal-edit-subject">
+        <div class="modal-card">
+            <div class="card-title">
+                <span>Edit Course / Subject</span>
+                <button class="btn btn-secondary" style="padding: 0.3rem 0.6rem;"
+                    onclick="closeModal('modal-edit-subject')">&times;</button>
+            </div>
+            <form onsubmit="handleUpdateSubject(event)">
+                <input type="hidden" id="modal-edit-subject-id">
+                <div class="form-group">
+                    <label>Subject Code</label>
+                    <input type="text" id="modal-edit-subject-code" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Subject Name</label>
+                    <input type="text" id="modal-edit-subject-name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Department</label>
+                    <input type="text" id="modal-edit-subject-dept" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Assigned Teacher / Faculty</label>
+                    <select id="modal-edit-subject-teacher" class="form-control">
+                        <option value="">-- Unassigned --</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem;">
+                    <button type="button" class="btn btn-secondary"
+                        onclick="closeModal('modal-edit-subject')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Subject</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Assign Subjects to Teacher Modal -->
+    <div class="modal-overlay" id="modal-assign-teacher-subjects">
+        <div class="modal-card">
+            <div class="card-title">
+                <span>Assign Subjects to Faculty</span>
+                <button class="btn btn-secondary" style="padding: 0.3rem 0.6rem;"
+                    onclick="closeModal('modal-assign-teacher-subjects')">&times;</button>
+            </div>
+            <form onsubmit="handleSaveTeacherAssignments(event)">
+                <input type="hidden" id="modal-assign-teacher-id">
+                <div style="margin-bottom: 1rem;">
+                    Faculty: <strong id="modal-assign-teacher-name" style="color: var(--accent-secondary); font-size: 1.1rem;">Teacher Name</strong>
+                </div>
+                <div class="form-group">
+                    <label>Select Subjects to Assign:</label>
+                    <div id="modal-assign-subjects-checkboxes" style="max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.8rem;">
+                        <!-- Dynamic checkboxes -->
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem;">
+                    <button type="button" class="btn btn-secondary"
+                        onclick="closeModal('modal-assign-teacher-subjects')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Assignments</button>
                 </div>
             </form>
         </div>

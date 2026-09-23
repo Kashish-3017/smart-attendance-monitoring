@@ -13,6 +13,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
+@SuppressWarnings("null")
 public class AttendanceService {
 
     @Autowired
@@ -51,7 +52,14 @@ public class AttendanceService {
     }
 
     public Map<String, Object> startSession(StartSessionRequest request) {
+        if (request == null || request.getTeacherId() == null || request.getSubjectId() == null || request.getClassroomId() == null) {
+            throw new IllegalArgumentException("Invalid Teacher, Subject, or Classroom ID");
+        }
+
         Optional<Teacher> teacherOpt = teacherRepository.findById(request.getTeacherId());
+        if (teacherOpt.isEmpty()) {
+            teacherOpt = teacherRepository.findByUserId(request.getTeacherId());
+        }
         Optional<Subject> subjectOpt = subjectRepository.findById(request.getSubjectId());
         Optional<Classroom> classroomOpt = classroomRepository.findById(request.getClassroomId());
 
@@ -111,6 +119,10 @@ public class AttendanceService {
     }
 
     public Map<String, Object> endSession(Long sessionId) {
+        if (sessionId == null) {
+            throw new IllegalArgumentException("Session ID must not be null");
+        }
+
         Optional<AttendanceSession> sessionOpt = sessionRepository.findById(sessionId);
         if (sessionOpt.isEmpty()) {
             throw new IllegalArgumentException("Session not found");
@@ -129,6 +141,13 @@ public class AttendanceService {
     }
 
     public AttendanceResultResponse markAttendance(MarkAttendanceRequest request) {
+        if (request == null) {
+            return new AttendanceResultResponse(
+                    false, "REJECTED", "Invalid request body.",
+                    0.0, 0.0, "Unknown", "Unknown", getCurrentFormattedTime()
+            );
+        }
+
         // 1. Validate Session Token
         Optional<AttendanceSession> sessionOpt = sessionRepository.findBySessionToken(request.getSessionToken());
         if (sessionOpt.isEmpty()) {
@@ -147,6 +166,13 @@ public class AttendanceService {
         }
 
         // 2. Validate Student
+        if (request.getStudentId() == null) {
+            return new AttendanceResultResponse(
+                    false, "REJECTED", "Student ID must not be null.",
+                    0.0, session.getRadiusMeters(), session.getSubject().getSubjectName(), session.getClassroom().getRoomName(), getCurrentFormattedTime()
+            );
+        }
+
         Optional<Student> studentOpt = studentRepository.findById(request.getStudentId());
         if (studentOpt.isEmpty()) {
             return new AttendanceResultResponse(

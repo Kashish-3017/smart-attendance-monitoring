@@ -117,6 +117,8 @@ public class AuthService {
             );
             teacher = teacherRepository.save(teacher);
             roleEntityId = teacher.getId();
+        } else if ("ADMIN".equalsIgnoreCase(role)) {
+            roleEntityId = user.getId();
         }
 
         return new LoginResponse(

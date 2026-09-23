@@ -35,7 +35,7 @@ public class SmartAttendanceApplication {
                 String hashedStudentPw = authService.getPasswordEncoder().encode("student123");
 
                 // 1. Admin Account
-                User adminUser = userRepository.save(new User("admin", hashedAdminPw, "Dr. Robert Admin", "admin@college.edu", "ADMIN"));
+                userRepository.save(new User("admin", hashedAdminPw, "Dr. Robert Admin", "admin@college.edu", "ADMIN"));
 
                 // 2. Teachers
                 User t1User = userRepository.save(new User("teacher1", hashedTeacherPw, "Prof. Sarah Connor", "sarah.connor@college.edu", "TEACHER"));
@@ -46,10 +46,10 @@ public class SmartAttendanceApplication {
 
                 // 3. Students
                 User s1User = userRepository.save(new User("student1", hashedStudentPw, "Alex Mercer", "alex.mercer@student.edu", "STUDENT"));
-                Student s1 = studentRepository.save(new Student(s1User, "CS2024001", "Computer Science", "Sem 6", "+91-9988776655"));
+                studentRepository.save(new Student(s1User, "CS2024001", "Computer Science", "Sem 6", "+91-9988776655"));
 
                 User s2User = userRepository.save(new User("student2", hashedStudentPw, "Emma Watson", "emma.watson@student.edu", "STUDENT"));
-                Student s2 = studentRepository.save(new Student(s2User, "CS2024002", "Computer Science", "Sem 6", "+91-9988776656"));
+                studentRepository.save(new Student(s2User, "CS2024002", "Computer Science", "Sem 6", "+91-9988776656"));
 
                 // 4. Classrooms (Default latitude/longitude coordinates)
                 Classroom room1 = classroomRepository.save(new Classroom("Lab 3 (CS Dept)", "Main Academic Block", 19.0760, 72.8777, 50.0));

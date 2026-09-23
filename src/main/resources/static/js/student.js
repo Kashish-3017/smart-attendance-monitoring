@@ -1,6 +1,183 @@
 /* Student View Script */
 
-let html5QrCodeScanner = null;
+let html5QrCode = null;
+let cameraDevicesList = [];
+let currentCameraIndex = 0;
+let currentFacingMode = "environment"; // Default to rear/back camera
+let isScannerActive = false;
+
+async function toggleCameraScanner() {
+    const readerDiv = document.getElementById('qr-reader');
+    const badgeContainer = document.getElementById('camera-badge-container');
+    const switchBtn = document.getElementById('btn-switch-camera');
+    if (!readerDiv) return;
+
+    if (!isScannerActive) {
+        readerDiv.style.display = 'block';
+        if (badgeContainer) badgeContainer.style.display = 'block';
+
+        if (typeof Html5Qrcode === 'undefined') {
+            showToast('Camera QR Scanner library is loading. Please try again in a moment.', 'info');
+            return;
+        }
+
+        if (!html5QrCode) {
+            html5QrCode = new Html5Qrcode("qr-reader");
+        }
+
+        await startCameraScannerAuto();
+    } else {
+        await stopCameraScanner();
+    }
+}
+
+async function startCameraScannerAuto() {
+    const switchBtn = document.getElementById('btn-switch-camera');
+
+    try {
+        cameraDevicesList = await Html5Qrcode.getCameras();
+    } catch (e) {
+        console.warn('Camera device enumeration unavailable, using constraints:', e);
+        cameraDevicesList = [];
+    }
+
+    let cameraSource = null;
+    let isRear = true;
+
+    if (cameraDevicesList && cameraDevicesList.length > 0) {
+        // Look for rear/back camera in labels
+        let rearIdx = cameraDevicesList.findIndex(d => {
+            const label = (d.label || '').toLowerCase();
+            return label.includes('back') || label.includes('rear') || label.includes('environment') || label.includes('facing back');
+        });
+
+        if (rearIdx !== -1) {
+            currentCameraIndex = rearIdx;
+            isRear = true;
+        } else if (cameraDevicesList.length > 1) {
+            // On mobile devices where labels may be blank before permission, rear camera is typically the last device
+            currentCameraIndex = cameraDevicesList.length - 1;
+            isRear = true;
+        } else {
+            currentCameraIndex = 0;
+            isRear = false;
+        }
+
+        cameraSource = cameraDevicesList[currentCameraIndex].id;
+    } else {
+        cameraSource = { facingMode: { ideal: "environment" } };
+        isRear = true;
+    }
+
+    await launchScannerWithSource(cameraSource, isRear);
+    if (switchBtn) switchBtn.style.display = 'inline-flex';
+}
+
+async function launchScannerWithSource(source, isRear) {
+    if (!html5QrCode) return;
+    const readerDiv = document.getElementById('qr-reader');
+    const switchBtn = document.getElementById('btn-switch-camera');
+
+    if (isScannerActive) {
+        try {
+            await html5QrCode.stop();
+        } catch (e) {
+            console.warn('Scanner stop error:', e);
+        }
+        isScannerActive = false;
+    }
+
+    const config = {
+        fps: 15,
+        qrbox: { width: 220, height: 220 }
+    };
+
+    const handleSuccess = (decodedText) => {
+        document.getElementById('student-qr-token').value = decodedText;
+        showToast(`Scanned QR Code Token: ${decodedText}`, 'success');
+        stopCameraScanner();
+    };
+
+    try {
+        await html5QrCode.start(source, config, handleSuccess, (err) => {});
+        isScannerActive = true;
+        updateCameraBadge(isRear);
+    } catch (primaryErr) {
+        console.warn('Primary camera start failed, attempting fallback:', primaryErr);
+        try {
+            // Fallback to front camera or constraint
+            const fallbackSource = (cameraDevicesList && cameraDevicesList.length > 0)
+                ? cameraDevicesList[0].id
+                : { facingMode: "user" };
+            await html5QrCode.start(fallbackSource, config, handleSuccess, (err) => {});
+            isScannerActive = true;
+            updateCameraBadge(false);
+            showToast('Rear camera unavailable; using available camera.', 'info');
+        } catch (fallbackErr) {
+            console.error('All camera attempts failed:', fallbackErr);
+            showToast('Unable to open camera: ' + (fallbackErr.message || fallbackErr), 'error');
+            if (readerDiv) readerDiv.style.display = 'none';
+            if (switchBtn) switchBtn.style.display = 'none';
+            const badgeContainer = document.getElementById('camera-badge-container');
+            if (badgeContainer) badgeContainer.style.display = 'none';
+        }
+    }
+}
+
+function updateCameraBadge(isRear) {
+    const badge = document.getElementById('camera-active-status');
+    const container = document.getElementById('camera-badge-container');
+    if (!badge) return;
+    if (container) container.style.display = 'block';
+
+    if (isRear) {
+        badge.className = 'badge badge-success';
+        badge.innerHTML = `<i class="fa-solid fa-camera"></i> Rear / Back Camera Active`;
+    } else {
+        badge.className = 'badge badge-warning';
+        badge.innerHTML = `<i class="fa-solid fa-camera-rotate"></i> Front Camera Active`;
+    }
+}
+
+async function stopCameraScanner() {
+    const readerDiv = document.getElementById('qr-reader');
+    const switchBtn = document.getElementById('btn-switch-camera');
+    const badgeContainer = document.getElementById('camera-badge-container');
+
+    if (html5QrCode && isScannerActive) {
+        try {
+            await html5QrCode.stop();
+        } catch (e) {
+            console.warn('Error stopping scanner:', e);
+        }
+        isScannerActive = false;
+    }
+    if (readerDiv) readerDiv.style.display = 'none';
+    if (switchBtn) switchBtn.style.display = 'none';
+    if (badgeContainer) badgeContainer.style.display = 'none';
+}
+
+async function switchCameraScanner() {
+    if (!html5QrCode || !isScannerActive) {
+        showToast('Camera is not running. Click Camera to start.', 'warning');
+        return;
+    }
+
+    if (cameraDevicesList && cameraDevicesList.length > 1) {
+        currentCameraIndex = (currentCameraIndex + 1) % cameraDevicesList.length;
+        const nextDevice = cameraDevicesList[currentCameraIndex];
+        const label = (nextDevice.label || '').toLowerCase();
+        const isRear = label.includes('back') || label.includes('rear') || label.includes('environment') || (currentCameraIndex !== 0);
+
+        await launchScannerWithSource(nextDevice.id, isRear);
+        showToast(`Switched to: ${nextDevice.label || (isRear ? 'Rear Camera' : 'Front Camera')}`, 'info');
+    } else {
+        currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
+        const isRear = (currentFacingMode === "environment");
+        await launchScannerWithSource({ facingMode: currentFacingMode }, isRear);
+        showToast(`Switched to ${isRear ? 'Rear / Back' : 'Front'} Camera`, 'info');
+    }
+}
 
 async function loadStudentData() {
     if (!STATE.currentUser || !STATE.currentUser.roleEntityId) return;
@@ -258,29 +435,4 @@ async function handleToggleTodo(todoId) {
     }
 }
 
-function toggleCameraScanner() {
-    const readerDiv = document.getElementById('qr-reader');
-    if (!readerDiv) return;
 
-    if (readerDiv.style.display === 'none' || !readerDiv.style.display) {
-        readerDiv.style.display = 'block';
-        if (typeof Html5QrcodeScanner !== 'undefined') {
-            html5QrCodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 200 });
-            html5QrCodeScanner.render((decodedText) => {
-                document.getElementById('student-qr-token').value = decodedText;
-                showToast(`Scanned QR Code Token: ${decodedText}`, 'success');
-                html5QrCodeScanner.clear();
-                readerDiv.style.display = 'none';
-            }, (error) => {
-                // Ignore scan frame errors
-            });
-        } else {
-            showToast('Camera QR Scanner library loading...', 'info');
-        }
-    } else {
-        if (html5QrCodeScanner) {
-            html5QrCodeScanner.clear();
-        }
-        readerDiv.style.display = 'none';
-    }
-}
